@@ -1,8 +1,10 @@
 #[macro_use] extern crate rocket;
 
+use rocket::serde::json::{ Value, json };
+
 #[get("/")]
-fn hello() -> &'static str {
-    "Hello World!"
+fn hello() -> Value {
+    json!("Hello World!")
 }
 
 #[rocket::main]
