@@ -1,36 +1,39 @@
-mod auth;
-
 #[macro_use] extern crate rocket;
-#[macro_use] extern crate rocket_sync_db_pools;
-extern crate diesel;
 
+mod auth;
+mod schema;
+mod models;
+
+use diesel::prelude::*;
 use auth::BasicAuth;
-use rocket::serde::json::{Value, json };
+use rocket::serde::json::{Value, json};
 use rocket::response::status;
+use rocket_sync_db_pools::database;
+use schema::rustaceans;
+use models::Rustacean;
 
 #[database("sqlite")]
-struct DbConn(diesel::SqliteConnection);
+struct DbConn(SqliteConnection);
 
 #[get("/rustaceans")]
-fn get_rustaceans(_auth: BasicAuth, _db: DbConn) -> Value {
-    json!([{"id":1, "name":"John Doe"}, {"id":2, "name":"Johnson Doe"}])
+async fn get_rustaceans(_auth: BasicAuth, db: DbConn) -> Value {
+    db.run(|c| {
+        let rustaceans = rustaceans::table.order(rustaceans::id.desc()).limit(1000).load::<Rustacean>(c).expect("DB error");
+        json!(rustaceans)
+    }).await
 }
-
 #[get("/rustaceans/<id>")]
 fn view_rustacean(id: i32, _auth: BasicAuth) -> Value {
-    json!({"id":id, "name":"Anmol Anand", "email":"aa@gmail.com"})
+    json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
 }
-
-#[post("/rustaceans", format="json")]
+#[post("/rustaceans", format = "json")]
 fn create_rustacean(_auth: BasicAuth) -> Value {
-    json!({"id":3, "name":"Anmol Anand", "email":"aa@gmail.com"})
+    json!({"id": 3, "name": "John Doe", "email": "john@doe.com"})
 }
-
-#[put("/rustaceans/<id>", format="json")]
+#[put("/rustaceans/<id>", format = "json")]
 fn update_rustacean(id: i32, _auth: BasicAuth) -> Value {
-    json!({"id":id, "name":"Anmol Anand", "email":"aa@gmail.com"})
+    json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
 }
-
 #[delete("/rustaceans/<_id>")]
 fn delete_rustacean(_id: i32, _auth: BasicAuth) -> status::NoContent {
     status::NoContent
@@ -38,7 +41,7 @@ fn delete_rustacean(_id: i32, _auth: BasicAuth) -> status::NoContent {
 
 #[catch(404)]
 fn not_found() -> Value {
-    json!("Not Found")
+    json!("Not found!")
 }
 
 #[rocket::main]
