@@ -11,7 +11,7 @@ pub struct Rustacean {
 }
 
 #[derive(Deserialize, Insertable)]
-#[table_name="rustaceans"]
+#[diesel(table_name = rustaceans )]
 pub struct NewRustacean {
     pub name: String,
     pub email: String,
