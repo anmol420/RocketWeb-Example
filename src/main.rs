@@ -1,4 +1,5 @@
 #[macro_use] extern crate rocket;
+#[macro_use] extern crate diesel_migrations;
 
 mod auth;
 mod schema;
@@ -6,11 +7,13 @@ mod models;
 mod repositories;
 
 use diesel::prelude::*;
+use rocket::fairing::AdHoc;
 use rocket::http::Status;
 use auth::BasicAuth;
 use rocket::serde::json::{Value, json, Json};
 use rocket::response::status;
 use rocket::response::status::Custom;
+use rocket::{Build, Rocket};
 use rocket_sync_db_pools::database;
 use crate::models::NewRustacean;
 use crate::repositories::RustaceanRepository;
@@ -63,6 +66,18 @@ async fn delete_rustacean(id: i32, _auth: BasicAuth, db: DbConn) -> Result<statu
     }).await
 }
 
+async fn run_db_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
+    use diesel_migrations::{EmbeddedMigrations, MigrationHarness};
+    const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+    DbConn::get_one(&rocket)
+        .await
+        .expect("Unable to retrieve connection").run(|c| {
+        c.run_pending_migrations(MIGRATIONS).expect("Migrations failed");
+    })
+        .await;
+    rocket
+}
+
 #[rocket::main]
 async fn main() {
     let _ = rocket::build()
@@ -74,6 +89,7 @@ async fn main() {
             delete_rustacean
         ])
         .attach(DbConn::fairing())
+        .attach(AdHoc::on_ignite("Running DB Migration", run_db_migrations))
         .launch()
         .await;
 }
