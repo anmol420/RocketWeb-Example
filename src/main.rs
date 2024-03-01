@@ -5,7 +5,6 @@ mod schema;
 mod models;
 
 use diesel::prelude::*;
-use rocket::execute;
 use auth::BasicAuth;
 use rocket::serde::json::{Value, json, Json};
 use rocket::response::status;
