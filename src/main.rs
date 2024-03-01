@@ -6,11 +6,12 @@ mod models;
 
 use diesel::prelude::*;
 use auth::BasicAuth;
-use rocket::serde::json::{Value, json};
+use rocket::serde::json::{Value, json, Json};
 use rocket::response::status;
 use rocket_sync_db_pools::database;
 use schema::rustaceans;
 use models::Rustacean;
+use crate::models::NewRustacean;
 
 #[database("sqlite")]
 struct DbConn(SqliteConnection);
@@ -22,18 +23,28 @@ async fn get_rustaceans(_auth: BasicAuth, db: DbConn) -> Value {
         json!(rustaceans)
     }).await
 }
+
 #[get("/rustaceans/<id>")]
 fn view_rustacean(id: i32, _auth: BasicAuth) -> Value {
     json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
 }
-#[post("/rustaceans", format = "json")]
-fn create_rustacean(_auth: BasicAuth) -> Value {
-    json!({"id": 3, "name": "John Doe", "email": "john@doe.com"})
+
+#[post("/rustaceans", format = "json", data = "<new_rustacean>")]
+async fn create_rustacean(_auth: BasicAuth, db: DbConn, new_rustacean: Json<NewRustacean>) -> Value {
+    db.run(|c| {
+        let result = diesel::insert_into(rustaceans::table)
+            .values(new_rustacean.into_inner())
+            .execute(c)
+            .expect("Failed To Add !");
+        json!(result)
+    }).await
 }
+
 #[put("/rustaceans/<id>", format = "json")]
 fn update_rustacean(id: i32, _auth: BasicAuth) -> Value {
     json!({"id": id, "name": "John Doe", "email": "john@doe.com"})
 }
+
 #[delete("/rustaceans/<_id>")]
 fn delete_rustacean(_id: i32, _auth: BasicAuth) -> status::NoContent {
     status::NoContent
