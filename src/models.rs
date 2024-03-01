@@ -2,7 +2,7 @@ use super::schema::rustaceans;
 use diesel::{ Queryable, Insertable };
 use serde::{ Serialize, Deserialize };
 
-#[derive(Serialize, Queryable)]
+#[derive(Serialize, Queryable, Deserialize)]
 pub struct Rustacean {
     pub id: i32,
     pub name: String,
