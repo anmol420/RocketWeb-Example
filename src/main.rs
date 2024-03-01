@@ -55,6 +55,11 @@ fn not_found() -> Value {
     json!("Not found!")
 }
 
+#[catch(422)]
+fn not_processible() -> Value {
+    json!("Some Entry Field(s) Are Missing!")
+}
+
 #[rocket::main]
 async fn main() {
     let _ = rocket::build()
@@ -66,7 +71,8 @@ async fn main() {
             delete_rustacean
         ])
         .register("/", catchers![
-            not_found
+            not_found,
+            not_processible
         ])
         .attach(DbConn::fairing())
         .launch()
