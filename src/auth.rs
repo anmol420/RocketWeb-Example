@@ -1,6 +1,7 @@
 use rocket::http::Status;
 use rocket::Request;
 use rocket::request::{FromRequest, Outcome};
+use base64::{engine::general_purpose, Engine as _};
 
 pub struct BasicAuth {
     pub username: String,
@@ -22,7 +23,7 @@ impl BasicAuth {
     }
 
     fn from_base64_encoded(base64_string: &str) -> Option<BasicAuth> {
-        let decoded = base64::decode(base64_string).ok()?;
+        let decoded = general_purpose::STANDARD.decode(base64_string).ok()?;
         let decoded_str = String::from_utf8(decoded).ok()?;
         let split = decoded_str.split(":").collect::<Vec<_>>();
 
